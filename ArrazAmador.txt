@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simulado Náutico - Arrais Amador</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap');
+    
+    body {
+      font-family: 'Montserrat', sans-serif;
+      background-image: url('https://images.unsplash.com/photo-1519046904884-53103b34b206?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80');
+      background-size: cover;
+      background-attachment: fixed;
+      background-position: center;
+    }
+    
+    .question-card {
+      transition: all 0.3s ease;
+    }
+    
+    .question-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+    
+    .option:hover {
+      background-color: #f0f9ff;
+    }
+    
+    .correct-answer {
+      background-color: #d1fae5;
+      border-color: #10b981;
+    }
+    
+    .incorrect-answer {
+      background-color: #fee2e2;
+      border-color: #ef4444;
+    }
+    
+    .feedback {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease-out;
+    }
+    
+    .feedback.show {
+      max-height: 300px;
+      transition: max-height 0.5s ease-in;
+    }
+  </style>
+</head>
+<body class="min-h-screen py-10 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-4xl mx-auto">
+    <div class="text-center mb-12">
+      <h1 class="text-4xl font-bold text-white mb-4 drop-shadow-lg">
+        <i class="fas fa-ship mr-3"></i> Simulado Náutico - Arrais Amador
+      </h1>
+      <p class="text-xl text-white opacity-90">Teste seus conhecimentos para a prova da Marinha</p>
+    </div>
+
+    <div class="bg-white bg-opacity-90 rounded-xl shadow-xl p-6 mb-10">
+      <div class="flex flex-col sm:flex-row justify-between items-center">
+        <div class="mb-4 sm:mb-0">
+          <h2 class="text-2xl font-semibold text-gray-800">Progresso: <span id="progress">0</span>/40</h2>
+          <div class="w-full bg-gray-200 rounded-full h-4 mt-2">
+            <div id="progress-bar" class="bg-blue-600 h-4 rounded-full" style="width: 0%"></div>
+          </div>
+        </div>
+        <button id="show-score" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition duration-300 flex items-center">
+          <i class="fas fa-chart-bar mr-2"></i> Ver Pontuação
+        </button>
+      </div>
+    </div>
+
+    <div id="score-container" class="hidden bg-white bg-opacity-90 rounded-xl shadow-xl p-6 mb-10">
+      <div class="text-center">
+        <h2 class="text-3xl font-bold text-gray-800 mb-6">Resultado Final</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+          <div class="bg-blue-50 p-4 rounded-lg">
+            <p class="text-sm text-blue-600 font-medium">Questões Respondidas</p>
+            <p id="answered" class="text-3xl font-bold text-blue-800">0</p>
+          </div>
+          <div class="bg-green-50 p-4 rounded-lg">
+            <p class="text-sm text-green-600 font-medium">Acertos</p>
+            <p id="correct" class="text-3xl font-bold text-green-800">0</p>
+          </div>
+          <div class="bg-red-50 p-4 rounded-lg">
+            <p class="text-sm text-red-600 font-medium">Erros</p>
+            <p id="wrong" class="text-3xl font-bold text-red-800">0</p>
+          </div>
+        </div>
+        <div class="bg-indigo-50 p-4 rounded-lg mb-4">
+          <p class="text-sm text-indigo-600 font-medium">Percentual de Acertos</p>
+          <p id="percentage" class="text-4xl font-bold text-indigo-800">0%</p>
+        </div>
+        <p id="result-message" class="text-xl font-medium mt-4"></p>
+      </div>
+    </div>
+
+    <!-- Questions will be inserted here -->
+    <div id="questions-container"></div>
+
+    <div class="bg-white bg-opacity-90 rounded-xl shadow-xl p-6 mt-10 text-center">
+      <button id="show-score-bottom" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition duration-300 flex items-center mx-auto">
+        <i class="fas fa-chart-bar mr-2"></i> Ver Pontuação Final
+      </button>
+    </div>
+  </div>
+
+  <script>
+    // Questions data
+    const questions = [
+      {
+        question: "O peso da água que a embarcação desloca para flutuar em águas tranquilas é o(a):",
+        options: [
+          "a) peso máximo",
+          "b) tonelagem de porte bruto",
+          "c) deslocamento da embarcação",
+          "d) caturro ou arfagem"
+        ],
+        correct: "c",
+        explanation: "Deslocamento da embarcação – é a quantidade de água que a embarcação desloca para conseguir flutuar."
+      },
+      {
+        question: "Uma pessoa que passou muito tempo em ambientes muito aquecidos poderá ser vítima de:",
+        options: [
+          "a) hemostasia",
+          "b) insolação",
+          "c) intermação",
+          "d) hipotermia"
+        ],
+        correct: "c",
+        explanation: "Intermação – é o aquecimento excessivo do corpo, podendo causar confusão mental e até desmaios."
+      },
+      {
+        question: "Numa atracação com vento ou corrente paralelo ao cais, deverei me aproximar:",
+        options: [
+          "a) com um ângulo agudo ao cais, e pouco seguimento",
+          "b) a favor da corrente ou vento, com pouco seguimento",
+          "c) sempre contrário ao vento ou corrente, com ângulo menor que 45 graus",
+          "d) a favor do elemento que predominar, e paralelo ao cais"
+        ],
+        correct: "c",
+        explanation: "Sempre contrário ao vento ou corrente, com ângulo menor que 45 graus – facilita o controle e segurança da atracação."
+      },
+      {
+        question: "De acordo com o RLESTA, na navegação de lazer, a mais grave infração, que não deve ser permitida a bordo é:",
+        options: [
+          "a) conduzir embarcações sem portar a habilitação",
+          "b) excesso de passageiros",
+          "c) tripulante não habilitado",
+          "d) habilitação rasgada"
+        ],
+        correct: "b",
+        explanation: "Excesso de passageiros – compromete a estabilidade e a segurança da embarcação."
+      },
+      {
+        question: "Uma embarcação miúda, ao necessitar cruzar uma via de tráfego, deverá fazê-lo:",
+        options: [
+          "a) somente durante o dia",
+          "b) em alta velocidade, a fim de permanecer o mínimo possível na via",
+          "c) somente se autorizada pelos navios que estão no canal",
+          "d) tomando o rumo mais próximo possível perpendicular à direção do fluxo de tráfego"
+        ],
+        correct: "d",
+        explanation: "Tomando o rumo mais próximo possível perpendicular à direção do fluxo de tráfego – reduz o tempo de exposição ao risco."
+      },
+      {
+        question: "O que vem a ser velocidade de segurança? E o que devemos fazer quando cruzamos com outras embarcações atracadas ou fundeadas?",
+        options: [
+          "a) velocidade máxima permitida; manter velocidade",
+          "b) velocidade ideal para baixa visibilidade; manter velocidade",
+          "c) velocidade que permite evitar colisões e parar em distância segura; diminuir velocidade",
+          "d) velocidade mínima para parar com segurança; manter velocidade"
+        ],
+        correct: "c",
+        explanation: "Velocidade que permite evitar colisões e parar em distância segura – e ao passar por embarcações atracadas ou fundeadas, devemos diminuir a velocidade."
+      },
+      {
+        question: "As informações que afetam a segurança de navegação devido a fatores meteorológicos, e transmitidos via rádio, são os:",
+        options: [
+          "a) boletins meteorológicos",
+          "b) avisos temporários",
+          "c) avisos rádio náutico SAR",
+          "d) boletim do navegante"
+        ],
+        correct: "a",
+        explanation: "Boletins meteorológicos – trazem dados atualizados sobre o clima que podem afetar a navegação."
+      },
+      {
+        question: "Durante a noite, um navegante vê a luz verde de outra lancha cruzando seu rumo com risco de abalroamento. Ele deverá:",
+        options: [
+          "a) guinar para boreste",
+          "b) guinar para bombordo",
+          "c) manter rumo e velocidade",
+          "d) aumentar sua velocidade"
+        ],
+        correct: "c",
+        explanation: "Manter rumo e velocidade – pois o outro é quem deve manobrar para evitar a colisão."
+      },
+      {
+        question: "Deve-se pular de uma embarcação que está naufragando:",
+        options: [
+          "a) de pé, com os braços abertos",
+          "b) de pé, com os braços colados ao corpo",
+          "c) de pé, com uma das mãos segurando o nariz e a outra sobre o ombro oposto",
+          "d) de pé, com os braços voltados para cima"
+        ],
+        correct: "c",
+        explanation: "De pé, com uma das mãos segurando o nariz e a outra sobre o ombro oposto – protege o nariz e o pescoço na entrada na água."
+      },
+      {
+        question: "Uma luz branca contínua, próxima à popa e visível num setor de 135°, chama-se:",
+        options: [
+          "a) luz de reboque",
+          "b) luz de popa",
+          "c) luz de alcançado",
+          "d) luzes de bordos"
+        ],
+        correct: "c",
+        explanation: "Luz de alcançado – usada para indicar que a embarcação pode ser alcançada por trás."
+      },
+      {
+        question: "Antes de se cobrir as queimaduras com pano limpo, devemos:",
+        options: [
+          "a) aplicar sobre elas pó de café ou açúcar",
+          "b) colocar manteiga ou banha",
+          "c) aplicar sobre elas álcool para desinfetar",
+          "d) passar mercúrio cromo ou mertiolate"
+        ],
+        correct: "d",
+        explanation: "Passar mercúrio cromo ou mertiolate – ajuda a desinfetar e proteger a queimadura antes da cobertura."
+      },
+      {
+        question: "Na ausência de apito, a embarcação poderá utilizar:",
+        options: [
+          "a) buzina ou sino para sinalizar as suas intenções",
+          "b) um holofote durante o tráfego em canal balizado",
+          "c) uma série de foguetes pirotécnicos",
+          "d) um gongo para manobrar à noite"
+        ],
+        correct: "a",
+        explanation: "Buzina ou sino para sinalizar as suas intenções – são os substitutos regulamentares do apito."
+      },
+      {
+        question: "As marcas de tope do sinal cardinal norte são:",
+        options: [
+          "a) dois cones pretos com os vértices para baixo",
+          "b) dois cones pretos com os vértices para cima",
+          "c) dois cones pretos base a base",
+          "d) dois cones pretos ponta a ponta"
+        ],
+        correct: "b",
+        explanation: "Dois cones pretos com os vértices para cima – indicam sinalização cardinal norte."
+      },
+      {
+        question: "De acordo com o RIPEAM, para evitar abalroamento e parar a embarcação com segurança, ela deve:",
+        options: [
+          "a) estar sempre a uma velocidade segura",
+          "b) sempre alertar outras embarcações",
+          "c) atualizar as cartas náuticas",
+          "d) guinar para um dos bordos"
+        ],
+        correct: "a",
+        explanation: "Estar sempre a uma velocidade segura – condição essencial para agir com segurança."
+      },
+      {
+        question: "O termo 'alijamento' significa:",
+        options: [
+          "a) avarias simples ou particulares",
+          "b) perigo que compromete isoladamente o navio ou a carga",
+          "c) lançamento ao mar de objetos para aliviar a embarcação",
+          "d) transbordo de mercadorias"
+        ],
+        correct: "c",
+        explanation: "Lançamento ao mar de objetos para aliviar a embarcação – prática usada em emergências."
+      },
+      {
+        question: "Durante a noite, ao avistar luz encarnada cruzando seu rumo com risco de abalroamento, o navegante deve:",
+        options: [
+          "a) guinar para boreste",
+          "b) guinar para bombordo",
+          "c) manter rumo e velocidade",
+          "d) aumentar sua velocidade"
+        ],
+        correct: "a",
+        explanation: "Guinar para boreste – para evitar a colisão, assumindo ação de dar passagem."
+      },
+      {
+        question: "Os extintores portáteis devem ser arrumados em:",
+        options: [
+          "a) locais fechados e seguros",
+          "b) paióis de materiais",
+          "c) locais de fácil acesso e livres de risco de incêndio",
+          "d) locais de acesso restrito"
+        ],
+        correct: "c",
+        explanation: "Locais de fácil acesso e livres de risco de incêndio – para uso imediato em emergências."
+      },
+      {
+        question: "Qual a cor da luz emitida pelo balizamento de canal preferencial a boreste?",
+        options: [
+          "a) verde",
+          "b) amarela",
+          "c) branca",
+          "d) encarnada"
+        ],
+        correct: "a",
+        explanation: "Verde – indica que o canal preferencial é à boreste (direita)."
+      },
+      {
+        question: "Em um naufrágio, a quantidade estipulada de água pela Marinha Brasileira é:",
+        options: [
+          "a) 2000 ml por pessoa",
+          "b) 350 ml por pessoa",
+          "c) 500 ml por pessoa",
+          "d) 700 ml por pessoa"
+        ],
+        correct: "c",
+        explanation: "500 ml por pessoa – quantidade mínima recomendada para sobrevivência."
+      },
+      {
+        question: "Os extintores de espuma são utilizados em:",
+        options: [
+          "a) incêndios da classe A",
+          "b) incêndios em líquidos inflamáveis",
+          "c) incêndios em materiais elétricos",
+          "d) incêndios em materiais sólidos inflamáveis"
+        ],
+        correct: "b",
+        explanation: "Incêndios em líquidos inflamáveis – são apropriados para conter chamas em combustíveis."
+      },
+      {
+        question: "Não se deve utilizar a moto aquática nas situações abaixo, exceto:",
+        options: [
+          "a) para reboque de pessoas praticando esqui aquático ou atividades similares",
+          "b) em atividade comercial",
+          "c) quando precisamos rebocar outro jet-ski",
+          "d) quando empregadas no serviço de salvamento da vida humana"
+        ],
+        correct: "d",
+        explanation: "Quando empregadas no serviço de salvamento da vida humana – é uma exceção legal prevista em normas."
+      },
+      {
+        question: "Em caso de acidente que necessite atendimento emergencial, deve-se:",
+        options: [
+          "a) avaliar o acidentado e suas condições, atentando-se para as funções vitais",
+          "b) socorrer a vítima, mesmo colocando sua vida em risco",
+          "c) atender a vítima, dispensando o atendimento especializado",
+          "d) manter o agrupamento de pessoas, pois isso pode melhorar o atendimento"
+        ],
+        correct: "a",
+        explanation: "Avaliar o acidentado e suas condições, atentando-se para as funções vitais – é o primeiro passo do socorro seguro e eficaz."
+      },
+      {
+        question: "O termo 'embarcação' designa:",
+        options: [
+          "a) qualquer embarcação sob vela, desde que a máquina não esteja em uso",
+          "b) qualquer tipo de embarcação, inclusive sem calado e hidroaviões",
+          "c) somente embarcações a vela que estejam navegando",
+          "d) qualquer embarcação a vela"
+        ],
+        correct: "b",
+        explanation: "Qualquer tipo de embarcação, inclusive sem calado e hidroaviões – conforme definição da Marinha do Brasil."
+      },
+      {
+        question: "Para segurança da embarcação, devemos proceder a diversas verificações antes de navegar, exceto:",
+        options: [
+          "a) verificar os equipamentos de combate a incêndio",
+          "b) verificar os equipamentos de salvatagem",
+          "c) verificar se as acomodações estão limpas e arrumadas",
+          "d) verificar os equipamentos de rádio"
+        ],
+        correct: "c",
+        explanation: "Verificar se as acomodações estão limpas e arrumadas – não influencia diretamente na segurança da navegação."
+      },
+      {
+        question: "São agentes extintores:",
+        options: [
+          "a) cobertores, gás hélio e CO2",
+          "b) água, CO2 e espuma",
+          "c) gás hélio e gasolina",
+          "d) gases em geral"
+        ],
+        correct: "b",
+        explanation: "Água, CO2 e espuma – são os principais tipos de agentes usados em extinção de incêndios."
+      },
+      {
+        question: "Como é chamada a manobra em que se mantém a proa ao vento para aguentar o mau tempo com pouco seguimento?",
+        options: [
+          "a) correr com o tempo",
+          "b) por a embarcação à capa",
+          "c) abater",
+          "d) derivar"
+        ],
+        correct: "b",
+        explanation: "Por a embarcação à capa – técnica utilizada para manter o controle durante mau tempo."
+      },
+      {
+        question: "Ao entrar em porto vindo do mar aberto, deixará por boreste as boias laterais de cor:",
+        options: [
+          "a) verde",
+          "b) amarela",
+          "c) encarnada",
+          "d) verde e encarnada"
+        ],
+        correct: "c",
+        explanation: "Encarnada – no sistema IALA B adotado no Brasil, as boias vermelhas ficam por boreste na entrada."
+      },
+      {
+        question: "O que pode ser tentado no caso de parada cardíaca, e que às vezes funciona de imediato?",
+        options: [
+          "a) respiração boca a boca",
+          "b) massagem nos punhos",
+          "c) aquecimento do corpo",
+          "d) murro forte no peito"
+        ],
+        correct: "d",
+        explanation: "Murro forte no peito – conhecido como 'golpe pré-cordial', pode reiniciar o coração em casos específicos."
+      },
+      {
+        question: "São partes do leme:",
+        options: [
+          "a) cabeça, corpo e dobradiças",
+          "b) madre, cana e porta",
+          "c) corpo, anete e cepo",
+          "d) cabeça, anete e haste"
+        ],
+        correct: "b",
+        explanation: "Madre, cana e porta – são os componentes fundamentais do sistema de leme tradicional."
+      },
+      {
+        question: "Qual a idade mínima e condição para habilitação de motonauta?",
+        options: [
+          "a) 18 anos, com treinamento prático e exame teórico sob certificação privada",
+          "b) 18 anos, com exame teórico na Capitania",
+          "c) 18 anos, com treinamento prático e exame teórico na Capitania dos Portos",
+          "d) 16 anos, com treinamento prático e exame teórico na Capitania dos Portos"
+        ],
+        correct: "c",
+        explanation: "18 anos, com treinamento prático e exame teórico na Capitania dos Portos – é o requisito oficial para habilitação de motonauta."
+      },
+      {
+        question: "A boca é:",
+        options: [
+          "a) o comprimento da embarcação sem mastreação",
+          "b) a menor largura da embarcação",
+          "c) a maior largura da embarcação",
+          "d) a medida ao longo do casco desconsiderando a quilha"
+        ],
+        correct: "c",
+        explanation: "A maior largura da embarcação – é a medida transversal máxima do casco."
+      },
+      {
+        question: "Em situações normais, quando o hélice de uma embarcação gira para a direita (sentido horário), ele:",
+        options: [
+          "a) joga a água para trás (ré) e impulsiona o barco para vante",
+          "b) joga a água para a frente e impulsiona o barco para ré",
+          "c) anula as forças que tendem a impulsionar o barco para vante",
+          "d) joga a água em todas as direções e não movimenta o barco"
+        ],
+        correct: "a",
+        explanation: "Joga a água para trás (ré) e impulsiona o barco para vante – princípio básico da propulsão náutica."
+      },
+      {
+        question: "Como se chamam as peças colocadas de proa a popa, na parte interna das cavernas, ligando-se entre si?",
+        options: [
+          "a) trincaniz",
+          "b) sicordas",
+          "c) longarinas",
+          "d) sobrequilha"
+        ],
+        correct: "c",
+        explanation: "Longarinas – contribuem para a rigidez longitudinal do casco."
+      },
+      {
+        question: "Um colete salva-vidas da Classe III se destina prioritariamente para navegação em área:",
+        options: [
+          "a) oceânica",
+          "b) desabrigada",
+          "c) costeira",
+          "d) interior"
+        ],
+        correct: "d",
+        explanation: "Interior – voltado para rios, lagos e ambientes abrigados."
+      },
+      {
+        question: "No caso de abandono da embarcação por incêndio e presença de óleo na superfície da água, devemos pular:",
+        options: [
+          "a) contra a correnteza",
+          "b) sempre de cabeça e com os pés juntos",
+          "c) sobre o óleo, para amaciar a queda",
+          "d) a favor da correnteza"
+        ],
+        correct: "a",
+        explanation: "Contra a correnteza – para evitar contato direto com o óleo inflamável."
+      },
+      {
+        question: "Uma embarcação com reboque de menos de 200 metros de comprimento deverá exibir:",
+        options: [
+          "a) três luzes brancas no mastro",
+          "b) uma luz branca no mastro",
+          "c) duas luzes brancas no mastro",
+          "d) quatro luzes brancas no mastro"
+        ],
+        correct: "c",
+        explanation: "Duas luzes brancas no mastro – conforme as regras de navegação noturna."
+      },
+      {
+        question: "Um náufrago pode passar sem comida por longo tempo, desde que tenha água. Quantos dias ele pode sobreviver?",
+        options: [
+          "a) cerca de 5 a 10 dias",
+          "b) cerca de 35 a 40 dias",
+          "c) cerca de 20 a 30 dias",
+          "d) cerca de 10 a 15 dias"
+        ],
+        correct: "b",
+        explanation: "Cerca de 35 a 40 dias – o corpo humano resiste mais tempo sem alimento do que sem água."
+      },
+      {
+        question: "O que pode ser improvisado e usado como defensa numa atracação?",
+        options: [
+          "a) espias e pneus desgastados",
+          "b) sacos de areia",
+          "c) restos de metais ou madeira",
+          "d) sacos com arames ou ferros"
+        ],
+        correct: "a",
+        explanation: "Espias e pneus desgastados – ajudam a evitar danos no casco ao encostar."
+      },
+      {
+        question: "Para arrancar a âncora (suspender), devemos posicionar o barco de forma que a amarra esteja:",
+        options: [
+          "a) vertical",
+          "b) horizontal",
+          "c) inclinada para vante",
+          "d) inclinada para ré"
+        ],
+        correct: "a",
+        explanation: "Vertical – facilita o rompimento da sucção do fundo."
+      },
+      {
+        question: "Ao sair do porto em direção ao mar aberto, deve-se deixar por boreste as boias laterais de cor:",
+        options: [
+          "a) verde",
+          "b) encarnada",
+          "c) amarela",
+          "d) branca"
+        ],
+        correct: "a",
+        explanation: "Verde – conforme o sistema de balizamento adotado no Brasil (IALA B)."
+      }
+    ];
+
+    // State management
+    const state = {
+      answered: 0,
+      correct: 0,
+      wrong: 0,
+      userAnswers: Array(questions.length).fill(null)
+    };
+
+    // DOM elements
+    const questionsContainer = document.getElementById('questions-container');
+    const progressElement = document.getElementById('progress');
+    const progressBar = document.getElementById('progress-bar');
+    const showScoreBtn = document.getElementById('show-score');
+    const showScoreBottomBtn = document.getElementById('show-score-bottom');
+    const scoreContainer = document.getElementById('score-container');
+    const answeredElement = document.getElementById('answered');
+    const correctElement = document.getElementById('correct');
+    const wrongElement = document.getElementById('wrong');
+    const percentageElement = document.getElementById('percentage');
+    const resultMessageElement = document.getElementById('result-message');
+
+    // Initialize the quiz
+    function initQuiz() {
+      renderQuestions();
+      updateProgress();
+    }
+
+    // Render all questions
+    function renderQuestions() {
+      questions.forEach((q, index) => {
+        const questionElement = document.createElement('div');
+        questionElement.className = 'question-card bg-white bg-opacity-90 rounded-xl shadow-md p-6 mb-6';
+        questionElement.id = `q${index + 1}`;
+        
+        questionElement.innerHTML = `
+          <h3 class="text-xl font-semibold text-gray-800 mb-4">Questão ${index + 1}: ${q.question}</h3>
+          <div class="options space-y-2">
+            ${q.options.map((opt, optIndex) => `
+              <label class="option block p-3 border border-gray-200 rounded-lg cursor-pointer transition ${state.userAnswers[index] === String.fromCharCode(97 + optIndex) ? 
+                (state.userAnswers[index] === q.correct ? 'correct-answer' : 'incorrect-answer') : ''}">
+                <input type="radio" name="q${index + 1}" value="${String.fromCharCode(97 + optIndex)}" 
+                  ${state.userAnswers[index] === String.fromCharCode(97 + optIndex) ? 'checked' : ''}
+                  ${state.userAnswers[index] !== null ? 'disabled' : ''}
+                  class="mr-2">
+                ${opt}
+              </label>
+            `).join('')}
+          </div>
+          <button onclick="checkAnswer(${index}, '${q.correct}')" 
+            class="mt-4 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition duration-300 ${state.userAnswers[index] !== null ? 'hidden' : ''}">
+            <i class="fas fa-check mr-2"></i> Verificar Resposta
+          </button>
+          <div class="feedback mt-4 p-4 rounded-lg ${state.userAnswers[index] !== null ? 'show' : ''}" 
+            style="${state.userAnswers[index] !== null ? '' : 'display: none;'}">
+            <p class="font-medium ${state.userAnswers[index] === q.correct ? 'text-green-600' : 'text-red-600'}">
+              <i class="fas ${state.userAnswers[index] === q.correct ? 'fa-check-circle' : 'fa-times-circle'} mr-2"></i>
+              ${state.userAnswers[index] === q.correct ? 'Resposta Correta!' : 'Resposta Incorreta!'}
+            </p>
+            <p class="mt-2 text-gray-700">${q.explanation}</p>
+          </div>
+        `;
+        
+        questionsContainer.appendChild(questionElement);
+        
+        // Add event listeners to options
+        const options = questionElement.querySelectorAll('.option input');
+        options.forEach(opt => {
+          opt.addEventListener('change', () => {
+            if (state.userAnswers[index] === null) {
+              state.userAnswers[index] = opt.value;
+              updateProgress();
+            }
+          });
+        });
+      });
+    }
+
+    // Check answer function (needs to be global for inline onclick)
+    window.checkAnswer = function(index, correctAnswer) {
+      const questionElement = document.getElementById(`q${index + 1}`);
+      const selectedOption = questionElement.querySelector(`input[name="q${index + 1}"]:checked`);
+      
+      if (!selectedOption) {
+        alert('Por favor, selecione uma resposta antes de verificar.');
+        return;
+      }
+      
+      const userAnswer = selectedOption.value;
+      state.userAnswers[index] = userAnswer;
+      state.answered++;
+      
+      if (userAnswer === correctAnswer) {
+        state.correct++;
+      } else {
+        state.wrong++;
+      }
+      
+      // Update UI
+      updateProgress();
+      
+      // Show feedback
+      const feedback = questionElement.querySelector('.feedback');
+      feedback.classList.add('show');
+      
+      // Disable all options and hide check button
+      const options = questionElement.querySelectorAll('.option input');
+      options.forEach(opt => opt.disabled = true);
+      
+      const checkBtn = questionElement.querySelector('button');
+      checkBtn.classList.add('hidden');
+      
+      // Highlight selected option
+      const selectedLabel = selectedOption.closest('label');
+      if (userAnswer === correctAnswer) {
+        selectedLabel.classList.add('correct-answer');
+      } else {
+        selectedLabel.classList.add('incorrect-answer');
+        
+        // Also highlight correct answer
+        const correctOption = questionElement.querySelector(`input[value="${correctAnswer}"]`);
+        correctOption.closest('label').classList.add('correct-answer');
+      }
+    };
+
+    // Update progress
+    function updateProgress() {
+      progressElement.textContent = state.answered;
+      progressBar.style.width = `${(state.answered / questions.length) * 100}%`;
+    }
+
+    // Show score
+    function showScore() {
+      const percentage = Math.round((state.correct / questions.length) * 100);
+      
+      answeredElement.textContent = state.answered;
+      correctElement.textContent = state.correct;
+      wrongElement.textContent = state.wrong;
+      percentageElement.textContent = `${percentage}%`;
+      
+      if (percentage >= 80) {
+        resultMessageElement.textContent = 'Excelente! Você está pronto para a prova! 🎉';
+        resultMessageElement.className = 'text-xl font-medium mt-4 text-green-600';
+      } else if (percentage >= 60) {
+        resultMessageElement.textContent = 'Bom desempenho! Continue estudando para melhorar. 👍';
+        resultMessageElement.className = 'text-xl font-medium mt-4 text-blue-600';
+      } else {
+        resultMessageElement.textContent = 'Você precisa estudar mais. Revise o material e tente novamente! 📚';
+        resultMessageElement.className = 'text-xl font-medium mt-4 text-red-600';
+      }
+      
+      scoreContainer.classList.remove('hidden');
+      scoreContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    // Event listeners
+    showScoreBtn.addEventListener('click', showScore);
+    showScoreBottomBtn.addEventListener('click', showScore);
+
+    // Initialize the quiz
+    initQuiz();
+  </script>
+</body>
+</html>}
